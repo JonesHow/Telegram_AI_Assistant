@@ -1,6 +1,5 @@
 import os
 
-from langchain import OpenAI
 from langchain.callbacks import get_openai_callback
 from langchain.chains.summarize import load_summarize_chain
 from langchain.chat_models import ChatOpenAI

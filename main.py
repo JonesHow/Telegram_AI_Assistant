@@ -1,11 +1,12 @@
 # 引入必要的模組
 import os
-
 import telegram
-from langchain.chat_models import ChatOpenAI
+from langchain.chat_models import ChatOpenAI, ChatAnthropic
 from langchain.document_loaders import UnstructuredURLLoader, PyPDFLoader
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandler, Filters
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+
 import requests
 import PyPDF2
 from bot_summarize import summarize_docs
@@ -19,7 +20,7 @@ TOKEN = telegram_token
 os.environ["OPENAI_API_KEY"] = openai_api_key
 
 # llm = OpenAI(model_name="text-davinci-003")
-llm = ChatOpenAI(temperature=0.7, model_name="gpt-3.5-turbo")
+llm = ChatOpenAI(temperature=0.7, model_name="gpt-3.5-turbo", streaming=True, callbacks=[StreamingStdOutCallbackHandler()])
 # 建立 updater 和 dispatcher 物件
 updater = Updater(TOKEN)
 dispatcher = updater.dispatcher
@@ -96,6 +97,9 @@ def text(update: Update, context: CallbackContext) -> None:
         # 回復“我很好！”
         update.message.reply_text("我很好！贊贊！")
     elif text == "爬蟲":
+        update.message.reply_text("好的，請問想爬什麽資料？")
+        # 設置一個標記，表示下一個消息是用戶的爬蟲需求
+        context.user_data["next"] = "requirement"
         # 回復“請給我一個網址”並設定用戶資料中的 crawler 為 True，以便後續處理
         update.message.reply_text("請給我一個網址，我會讀取它的內容。")
         context.user_data["crawler"] = True
@@ -112,14 +116,7 @@ def url(update: Update, context: CallbackContext) -> None:
     # 判斷用戶資料中是否有 summarize_type 或 crawler 的標記，以便執行不同的動作
     if "summarize_type" in context.user_data and context.user_data["summarize_type"] == "url":
         # 如果是 /summarize command 的 URL 摘要，則執行以下動作：
-        # 使用 requests 模組發送 GET 請求到 URL 網址並獲取回應內容（這裡假設是純文字）
-        # response = requests.get(url)
-        # content = response.text
-
-        # 使用某種摘要演算法對內容進行摘要（這裡假設有一個 summarize 函數可以做到）
         summary = summarize_docs(UnstructuredURLLoader(urls = [url]).load(), url)
-        # print("content length : ", len(content))
-        # summary = content # 回復無法超過 4096 個字元
 
         # 發送摘要結果給用戶（這裡假設摘要結果不超過 4096 個字元）
         update.message.reply_text(summary[:4096])
@@ -150,26 +147,19 @@ def pdf(update: Update, context: CallbackContext) -> None:
     file_path = f"./pdfs/{file_id}.pdf"
     bot.getFile(file_id).download(file_path)
 
-    # 使用 PyPDF2 模組讀取 PDF 檔案並獲取第一頁的文字（這裡假設第一頁有文字）
-    # pdf_file = open(file_path, "rb")
-    # pdf_reader = PyPDF2.PdfFileReader(pdf_file)
-    # first_page = pdf_reader.getPage(0)
-    # text = first_page.extractText()
-
     # 判斷用戶資料中是否有 summarize_type 的標記，以便執行不同的動作
     if "summarize_type" in context.user_data and context.user_data["summarize_type"] == "pdf":
 
         try:
             # 如果是 /summarize command 的 PDF 摘要，則執行以下動作：
-            # 使用某種摘要演算法對文字進行摘要（這裡假設有一個 summarize 函數可以做到）
+            # 使用某種摘要演算法對文字進行摘要
             loader = PyPDFLoader(file_path)
             pages = loader.load_and_split()
-            # summary = summarize(text)
             summary = summarize_docs(pages, file_path)
             # 發送摘要結果給用戶（這裡假設摘要結果不超過 4096 個字元）
             update.message.reply_text(summary[:4096])
         except telegram.error.BadRequest as e:
-            # 如果出現 BadRequest 錯誤，並且錯誤訊息是 Message text is empty，就回復 Message text is empty
+            # 如果出現 BadRequest 錯誤，並且錯誤訊息是 Message text is empty
             if str(e) == "Message text is empty":
                 context.bot.send_message(chat_id=update.effective_chat.id, text="PDF 裡都是圖片，沒有字元可讀喔！")
 
