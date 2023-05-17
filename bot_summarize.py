@@ -12,8 +12,10 @@ def summarize_docs(docs, doc_url):
     print (f'You have {len(docs)} document(s) in your {doc_url} data')
     print (f'There are {len(docs[0].page_content)} characters in your document')
 
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
+    # 切割文檔
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=3)
 
+    # 加載切割後的文檔
     split_docs = text_splitter.split_documents(docs)
 
     print (f'You have {len(split_docs)} split document(s)')

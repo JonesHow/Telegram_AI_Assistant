@@ -1,30 +1,74 @@
 # 引入必要的模組
 import os
+import re
+from urllib.parse import urlparse
+
+from PyPDF2 import PdfReader
+from dotenv import load_dotenv
+from langchain.indexes import VectorstoreIndexCreator
+from langchain.schema import Document
 import telegram
 from langchain.chat_models import ChatOpenAI, ChatAnthropic
 from langchain.document_loaders import UnstructuredURLLoader, PyPDFLoader
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Updater, CommandHandler, CallbackContext, CallbackQueryHandler, MessageHandler, Filters
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain.agents import load_tools, initialize_agent, AgentType
+from langchain import GoogleSerperAPIWrapper
+from langchain.tools import Tool
+from langchain.utilities import ApifyWrapper
+
+from langchain.chains.question_answering import load_qa_chain
 
 import requests
 import PyPDF2
+
+from bot_sql import search_sql
 from bot_summarize import summarize_docs
+from bot_memory import qa_memory
+from bot_crawler import crawler
+from bot_import_pdf import importing_pdf, chat_pdf
 
-
-from key import *
-
+# 載入網路搜索套件
+# from langchain.utilities import SerpAPIWrapper
+# search = SerpAPIWrapper()
+# tools = load_tools(["serpapi"])
 
 # 設定你的 token
-TOKEN = telegram_token
-os.environ["OPENAI_API_KEY"] = openai_api_key
+load_dotenv()
+TOKEN = os.getenv("TELEGRAM_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+# SERPAPI_API_KEY = os.getenv("SERPAPI_API_KEY")
+SERPER_API_KEY = os.getenv("SERPER_API_KEY")
+APIFY_API_TOKEN = os.getenv("APIFY_API_TOKEN")
 
-# llm = OpenAI(model_name="text-davinci-003")
+
 llm = ChatOpenAI(temperature=0.7, model_name="gpt-3.5-turbo", streaming=True, callbacks=[StreamingStdOutCallbackHandler()])
-# 建立 updater 和 dispatcher 物件
+
+
+# 建立 Google 搜尋物件
+search = GoogleSerperAPIWrapper()
+tools = [
+    Tool(
+        name="Intermediate Answer",
+        func=search.run,
+        description="useful for when you need to ask with search"
+    )
+]
+# 初始化搜尋工具，verbose=True 會打印全部執行詳情
+self_ask_with_search = initialize_agent(tools, llm, agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION, verbose=True)
+
+# 建立網頁爬蟲
+# apify = ApifyWrapper()
+
+# 建立 Telegram 的 updater 和 dispatcher 物件
 updater = Updater(TOKEN)
 dispatcher = updater.dispatcher
 
+# 創建必要文件夾
+current_path = os.getcwd()
+if not os.path.isdir(current_path + "/pdfs/"):
+    os.makedirs(current_path + "/pdfs/")
 
 # 定義 /start command 的處理函數
 def start(update: Update, context: CallbackContext) -> None:
@@ -35,11 +79,11 @@ def start(update: Update, context: CallbackContext) -> None:
 # 定義 /help command 的處理函數
 def help(update: Update, context: CallbackContext) -> None:
     # 發送一個說明訊息
-    update.message.reply_text("這是一個示例 bot，你可以使用以下的 command：\n"
+    update.message.reply_text("你可以使用以下的 command：\n"
                               "/start - 開始使用 bot\n"
                               "/help - 查看說明\n"
                               "/summarize - 對一個 URL 或 PDF 進行摘要\n"
-                              "/importpdf - 讀取一個 PDF 的第一頁")
+                              "/importpdf - 將 PDF 存儲進向量資料庫")
 
 
 # 定義 /summarize command 的處理函數
@@ -60,9 +104,9 @@ def summarize(update: Update, context: CallbackContext) -> None:
 # 定義 /importpdf command 的處理函數
 def importpdf(update: Update, context: CallbackContext) -> None:
     # 發送一個訊息要求用戶給一個 PDF
-    update.message.reply_text("請給我一個 PDF 檔案，我會讀取它的第一頁。")
+    update.message.reply_text("請給我一個 PDF 檔案，我會讀取並儲存它。")
     # 設定用戶資料中的 summarize_type 為 pdf，以便後續處理
-    context.user_data["summarize_type"] = "pdf"
+    context.user_data["importpdf"] = True
 
 
 # 定義按鈕回調的處理函數
@@ -90,22 +134,30 @@ def text(update: Update, context: CallbackContext) -> None:
     text = update.message.text
 
     # 根據不同的文字執行不同的動作
-    if text == "哈嘍":
+    if "哈嘍" in text:
         # 回復“你好！”
         update.message.reply_text("你好！")
-    elif text == "你好":
+    elif "你好" in text:
         # 回復“我很好！”
         update.message.reply_text("我很好！贊贊！")
-    elif text == "爬蟲":
-        update.message.reply_text("好的，請問想爬什麽資料？")
+    elif "幫我爬蟲" in text:
+
+        update.message.reply_text(crawler(text))
         # 設置一個標記，表示下一個消息是用戶的爬蟲需求
-        context.user_data["next"] = "requirement"
+        # context.user_data["next"] = "requirement"
         # 回復“請給我一個網址”並設定用戶資料中的 crawler 為 True，以便後續處理
-        update.message.reply_text("請給我一個網址，我會讀取它的內容。")
-        context.user_data["crawler"] = True
+        # update.message.reply_text("請給我一個網址，我會讀取它的內容。")
+        # context.user_data["crawler"] = True
+        # update.message.reply_text(crawler(text))
+    elif "搜尋網頁" in text:
+        update.message.reply_text(self_ask_with_search.run(text))
+    elif "在pdf" or "查pdf" in text:
+        update.message.reply_text(chat_pdf(text))
+    elif "查sql" in text:
+        update.message.reply_text(search_sql(text, llm))
     else:
-        update.message.reply_text("你說了：" + text)
-        # update.message.reply_text(llm(text)) # text-davinci-003
+        # update.message.reply_text("你說了：" + text)
+        update.message.reply_text(qa_memory(text, llm))
 
 
 # 定義用戶 URL 的處理函數
@@ -169,8 +221,21 @@ def pdf(update: Update, context: CallbackContext) -> None:
     elif "importpdf" in context.user_data and context.user_data["importpdf"] == True:
         # 如果是 /importpdf command 的 PDF 讀取，則執行以下動作：
         # 發送文字給用戶（這裡假設文字不超過 4096 個字元）
-        print("hahahhaa666")
-        update.message.reply_text(text[:4096])
+
+        # loader = PyPDFLoader(file_path)
+        # pages = loader.load_and_split()
+
+        reader = PdfReader(file_path)
+        raw_text = ''
+        for i, page in enumerate(reader.pages):
+            text = page.extract_text()
+            if text:
+                raw_text += text
+
+        import_done = importing_pdf(raw_text, file_path)
+        print(import_done)
+
+        update.message.reply_text(import_done)
 
         # 清除用戶資料中的 importpdf 標記，以免影響後續處理
         del context.user_data["importpdf"]
