@@ -24,7 +24,6 @@ load_dotenv()
 TOKEN = os.getenv("TELEGRAM_TOKEN")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 SERPER_API_KEY = os.getenv("SERPER_API_KEY")
-APIFY_API_TOKEN = os.getenv("APIFY_API_TOKEN")
 
 llm = ChatOpenAI(temperature=0.7, model_name="gpt-3.5-turbo", streaming=True, callbacks=[StreamingStdOutCallbackHandler()])
 
@@ -59,6 +58,8 @@ def start(update: Update, context: CallbackContext) -> None:
 
 # 定義 /help command 的處理函數
 def help(update: Update, context: CallbackContext) -> None:
+    # 初始化特殊屬性
+    context.user_data["chat_with_pdf"] = False
     # 發送一個說明訊息
     update.message.reply_text("你可以使用以下的 command：\n"
                               "/start - 開始使用 bot\n"
@@ -117,11 +118,11 @@ def text(update: Update, context: CallbackContext) -> None:
     # 根據不同的文字執行不同的動作
     if "哈嘍" in text:
         update.message.reply_text("你好！有什麽可以幫助你的嗎？")
+    elif "搜尋網頁" in text:
+        update.message.reply_text(self_ask_with_search.run(text))
     elif "幫我爬蟲" in text:
         update.message.reply_text("好的，請給我網址和爬蟲要求。\n(為了更好地識別，請在網址前後空一格)")
         context.user_data["crawler"] = True
-    elif "搜尋網頁" in text:
-        update.message.reply_text(self_ask_with_search.run(text))
     elif "查看sql" in text:
         # update.message.reply_text(search_sql(text, llm))
         update.message.reply_text("抱歉，SQL 功能還在開發中。")
