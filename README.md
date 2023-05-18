@@ -46,15 +46,20 @@ python main.py
 然後你可以打開 Telegram 並向你的機器人發送消息。你可以使用自然語言來觸發不同的功能。例如：
 
 - 使用關鍵字 "搜尋網頁"，如："幫我搜尋網頁，台積電今天的股價是台幣多少？" 將返回搜尋結果。
+![img.png](data/img/img.png)
 - 使用關鍵字 "幫我爬蟲" 後會請求用戶給出網址和要求。這時候回復如： "https://www.moneydj.com/z/zc/zca/zca_2330.djhtm  請使用 JSON 格式返回台積電各年份的最高和最低本益比"，將返回 JSON 格式的資料。
+![img.png](data/img/img1.png)
 - 導入使用關鍵字 "查看pdf" 後，之後的對話就會圍繞 pdf 的數據庫資料來進行問答，直到回復關鍵字 "關閉pdf" 後恢復成一般聊天模式。這可以避免 pdf 的數據庫和一般聊天的數據庫出現交曡而造成不必要的混亂。
+![img.png](data/img/img2.png)
 
 你也可以正常地和機器人聊天，它會嘗試以友好而有趣的方式回應。你可以通過使用命令來進行一些操作，例如：
 
 - /start - 開始使用 bot
 - /help - 查看說明
 - /summarize - 對一個 URL 或 PDF 進行摘要
+![img.png](data/img/img3.png)
 - /importpdf - 將 PDF 存儲進向量資料庫
+![img.png](data/img/img4.png)
 
 ## 許可證
 
