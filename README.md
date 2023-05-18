@@ -1,6 +1,6 @@
 # Telegram AI Assistant
 
-Telegram AI Assistant 是一個項目，旨在為 Telegram 用戶提供一個強大而多功能的聊天機器人。它利用大語言模型（如 OpenAI 的 GPT-3、Google 的 Bard、Hugging Face 等，可隨時替換）和各種 API 通過自然語言命令執行各種任務和功能。其中一些特點包括：
+Telegram AI Assistant 是一個項目，旨在為 Telegram 用戶提供一個強大而多功能的聊天機器人。它利用大語言模型（如 OpenAI 的 GPT-3、Google 的 Bard、Hugging Face 的模型等）和各種 API 通過自然語言命令執行各種任務和功能。其中一些特點包括：
 
 - 利用向量數據庫儲存對話內容，不僅大幅減少 Token 的消耗，還能讓 AI 記住至少 7 天以前的對話內容，提高對話的連貫性和深度。
 - 採用文字偵測技術，讓使用者可以用自然語言執行各種特定功能，同時節省 Token 的使用，提高效率和靈活性。
