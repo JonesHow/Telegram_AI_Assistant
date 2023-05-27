@@ -49,10 +49,12 @@ python main.py
 <p align="center">
     <img src="data/img/img.png" width="61.8%" height = "100%" />
 </p>
+
 - 使用關鍵字 "幫我爬蟲" 後會請求用戶給出網址和要求。這時候回復如： "https://www.moneydj.com/z/zc/zca/zca_2330.djhtm  請使用 JSON 格式返回台積電各年份的最高和最低本益比"，將返回 JSON 格式的資料。
 <p align="center">
     <img src="data/img/img1.png" width="61.8%" height = "100%" />
 </p>
+
 - 導入使用關鍵字 "查看pdf" 後，之後的對話就會圍繞 pdf 的數據庫資料來進行問答，直到回復關鍵字 "關閉pdf" 後恢復成一般聊天模式。這可以避免 pdf 的數據庫和一般聊天的數據庫出現交曡而造成不必要的混亂。
 <p align="center">
     <img src="data/img/img2.png" width="61.8%" height = "100%" />
