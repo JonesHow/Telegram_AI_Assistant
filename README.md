@@ -68,6 +68,7 @@ python main.py
 <p align="center">
     <img src="data/img/img3.png" width="61.8%" height = "100%" />
 </p>
+
 - /importpdf - 將 PDF 存儲進向量資料庫
 <p align="center">
     <img src="data/img/img4.png" width="61.8%" height = "100%" />
