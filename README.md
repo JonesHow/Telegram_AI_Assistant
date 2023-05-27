@@ -12,7 +12,7 @@ Telegram AI Assistant 是一個項目，旨在為 Telegram 用戶提供一個強
 
 ## 安裝
 
-要使用 Telegram AI Assistant，你需要有一個 Telegram Bot 和一個有權訪問 GPT-3 的 OpenAI 帳號。你還需要安裝一些依賴項：
+要使用 Telegram AI Assistant，你需要有一個 Telegram Bot 和一個 OpenAI 帳號。你還需要安裝一些依賴項：
 
 - Python 3.8
 - langchain==0.0.173
